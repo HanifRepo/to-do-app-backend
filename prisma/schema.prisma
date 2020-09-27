@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model todolist {
+  id          Int    @default(autoincrement()) @id
+  todoValue   String
+  iscompleted String
+  ischecked   String
+  userid      Int
+  user        user   @relation(fields: [userid], references: [id])
+
+  @@index([userid], name: "userid")
+}
+
+model user {
+  username String
+  password String
+  id       Int        @default(autoincrement()) @id
+  todolist todolist[]
+}
