@@ -1,0 +1,17 @@
+POST http://localhost:3000/users/signup
+Content-Type: application/json
+
+{
+    "username": "demo",
+    "password": "demo"
+}
+###
+
+POST http://localhost:3000/listhandler/checkinput
+Authorization: BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiZGVtbyIsImlhdCI6MTYwMTM1MzY5MX0.X97UM7A0hi1IdlkZhVJS_1JzxyzFPnONOuilLsEudIY
+Content-Type: application/json
+
+{
+    "username": "demo",
+    "todoValue": "hi"
+}
