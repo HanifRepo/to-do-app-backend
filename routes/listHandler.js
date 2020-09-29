@@ -1,25 +1,36 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient();
 var express = require('express');
 var router = express.Router();
+const jwt = require('jsonwebtoken');
 
-router.route('/checkinput').post(async function(req,res){
+router.post('/checkinput' ,autenticateToken ,async function(req,res){
     res.setHeader('Content-Type', 'application/json');
+    var todoData = req.body.todoValue;
+    if(req.answer.name === req.body.username){
+      console.log('Inside If');
     const checkUser = await prisma.user.findMany({
       where: {
         username: req.body.username
       }
     });
-    const checkToDoValue = await prisma.todolist.findMany({
-        where: {
-          userid: checkUser[0].id,
-          todoValue: req.body.toDoValue
-        }
+    const getUserToDoList = await prisma.todolist.findMany({
+      where: {
+        userid: checkUser[0].id
+      }
     })
-    if(checkToDoValue.length === 0){
+    var checkToDoValue = true;
+    for(let i of getUserToDoList){
+      if(i.todoValue === todoData){
+        checkToDoValue = false;
+        break;
+      }
+    }
+    if(checkToDoValue){
       const newToDOValue = await prisma.todolist.create({
         data: {
-            todoValue: req.body.toDoValue,
+            todoValue: todoData,
             iscompleted: "uncompleted",
             ischecked: "false",
             user: {
@@ -34,10 +45,17 @@ router.route('/checkinput').post(async function(req,res){
     } else {
       res.end(JSON.stringify({status : 'repeated'}));
     }
+    }else{
+      res.sendStaus(403);
+      res.end();
+    }
 });
 
-router.route('/setuplist').post(async function(req,res){
+router.post('/setuplist',autenticateToken,async function(req,res){
     res.setHeader('Content-Type', 'application/json');
+    console.log(req.answer.name);
+    console.log( req.body.username);
+    if(req.answer.name === req.body.username){
     const checkUser = await prisma.user.findMany({
       where: {
         username: req.body.username
@@ -53,10 +71,14 @@ router.route('/setuplist').post(async function(req,res){
     } else {
       res.end(JSON.stringify(getToDoValue));
     }
+    }else{
+      res.sendStaus(403);
+    }
 });
 
-router.route('/completesingleitem').post(async function(req,res){
+router.post('/completesingleitem',autenticateToken,async function(req,res){
     res.setHeader('Content-Type', 'application/json');
+    if(req.answer.name === req.body.username){
     const checkUser = await prisma.user.findMany({
       where: {
         username: req.body.username
@@ -82,10 +104,15 @@ router.route('/completesingleitem').post(async function(req,res){
             break;
         }
     }
+    }else{
+      res.sendStaus(403);
+      res.end();
+    }
 });
 
-router.route('/deletesingleitem').post(async function(req,res){
+router.post('/deletesingleitem',autenticateToken,async function(req,res){
     res.setHeader('Content-Type', 'application/json');
+    if(req.answer.name === req.body.username){
     const checkUser = await prisma.user.findMany({
       where: {
         username: req.body.username
@@ -107,9 +134,14 @@ router.route('/deletesingleitem').post(async function(req,res){
             break;
         }
     }
+    }else{
+      res.sendStaus(403);
+      res.end();
+    }
 });
 
-router.route('/completebatchitem').post(async function(req,res){
+router.post('/completebatchitem',autenticateToken,async function(req,res){
+  if(req.answer.name === req.body.username){
     const checkUser = await prisma.user.findMany({
       where: {
         username: req.body.username
@@ -136,9 +168,14 @@ router.route('/completebatchitem').post(async function(req,res){
         }
         }
     }
+  }else{
+    res.sendStaus(403);
+    res.end();
+  }
 });
 
-router.route('/deletebatchitem').post(async function(req,res){
+router.post('/deletebatchitem',autenticateToken,async function(req,res){
+  if(req.answer.name === req.body.username){  
     const checkUser = await prisma.user.findMany({
       where: {
         username: req.body.username
@@ -163,7 +200,22 @@ router.route('/deletebatchitem').post(async function(req,res){
         }
         }
     }
+  }else{
+    res.sendStaus(403);
+    res.end();
+  }
 });
 
+function autenticateToken(req,res,next){
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if(token === null) return res.sendStaus(401);
+
+  jwt.verify(token,process.env.SECRET_KEY,(err,name) =>{
+    if(err) return res.sendStaus(403);
+    req.answer = name;
+  })
+  next();
+}
 
 module.exports = router;
